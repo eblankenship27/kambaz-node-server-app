@@ -46,7 +46,7 @@ export default function UserRoutes(app) {
         );
         return;
     }
-    currentUser = await dao.createUser(req.body);
+    const currentUser = await dao.createUser(req.body);
     res.json(currentUser);
    };
   const signin = async (req, res) => { 
