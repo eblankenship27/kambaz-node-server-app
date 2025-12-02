@@ -1,36 +1,43 @@
 import { v4 as uuidv4 } from "uuid";
-export default function EnrollmentsDao(db) {
-  function findEnrollmentsForUser(userId) {
-    const { enrollments } = db;
-    return enrollments.filter((e) => e.user === userId);
+import model from "./model.js";
+
+export default function EnrollmentsDao() {
+  async function findCoursesForUser(userId) {
+    const enrollments = await model.find({ user: userId }).populate("course");
+    return enrollments.map((enrollment) => enrollment.course);
   }
-  function createNewEnrollment(enrollment) {
-    const newEnrollment = { ...enrollment, _id: uuidv4() }
-    const { enrollments } = db;
-    db.enrollments = [...enrollments, newEnrollment];
-    return newEnrollment;
+  async function findUsersForCourse(courseId) {
+    const enrollments = await model.find({ course: courseId }).populate("user");
+    return enrollments.map((enrollment) => enrollment.user);
+  }
+  function unenrollAllUsersFromCourse(courseId) {
+    return model.deleteMany({ course: courseId })
+  }
+  async function findEnrollmentsForUser(userId) {
+    const enrollments = await model.find({ user: userId})
+    return enrollments
+  }
+  async function findEnrollments() {
+    const enrollments = await model.find();
+    return enrollments
   }
   function enrollUserInCourse(userId, courseId) {
-    const newEnrollment = { _id: uuidv4(), user: userId, course: courseId };
-    const { enrollments } = db;
-    db.enrollments = [...enrollments, newEnrollment];
-    return newEnrollment;
+    return model.create({
+      user: userId,
+      course: courseId,
+      _id: `${userId}-${courseId}`,
+    });
   }
-  function deleteEnrollment(enrollmentId) {
-    const { enrollments } = db;
-    db.enrollments = enrollments.filter((e) => e._id !== enrollmentId);
-  }
-  function updateEnrollment(enrollmentId, enrollmentUpdates) {
-    const { enrollments } = db;
-    const enrollment = enrollments.find((e) => e._id === enrollmentId);
-    Object.assign(enrollment, enrollmentUpdates);
-    return enrollment;
+  function unenrollUserFromCourse(user, course) {
+    return model.deleteOne({ user, course });
   }
   return { 
     enrollUserInCourse,
+    unenrollUserFromCourse,
     findEnrollmentsForUser,
-    deleteEnrollment,
-    createNewEnrollment,
-
+    findCoursesForUser,
+    findUsersForCourse,
+    findEnrollments,
+    unenrollAllUsersFromCourse,
    };
 }
